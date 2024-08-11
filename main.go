@@ -49,9 +49,9 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println("mark as done", doneCmd.Args())
+		listTodos(db)
 
 	default:
-		// create todo
 		_, err := db.Exec("insert into todos (title, done) values (?, ?)", os.Args[1], false)
 		if err != nil {
 			log.Fatal(err)
@@ -74,7 +74,7 @@ func listTodos(db *sql.DB) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("[%d] %+v\n", index, todo.title)
+		fmt.Printf("%d. %+v\n", index, todo.title)
 		index++
 	}
 	err = rows.Err()
