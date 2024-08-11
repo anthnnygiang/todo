@@ -1,9 +1,13 @@
 # Todo CLI
 
+## Installation
+`$ go install .`
+
 ## Setup
 Create a SQLite database store
 `$ sqlite3 todo.db < init.sql`
 
+## Usage
 * `todo "todo"`: Add a todo
 * `todo ls`: List todos
 * `todo done ...id`: Complete a todo 

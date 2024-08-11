@@ -24,8 +24,9 @@ func main() {
 	lsCmd := flag.NewFlagSet("ls", flag.ExitOnError)
 	doneCmd := flag.NewFlagSet("done", flag.ExitOnError)
 
-	if len(os.Args) <= 1 {
-		fmt.Println("Usage: todo [ ls | done | <title> ]")
+	argLen := len(os.Args)
+	if argLen < 2 || argLen > 2 {
+		fmt.Println("Usage: todo [\"title\" | ls | done <...index>]")
 		return
 	}
 
