@@ -7,11 +7,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
 type Todo struct {
 	title string
-	done  bool
 }
 
 func main() {
@@ -25,15 +26,15 @@ func main() {
 	doneCmd := flag.NewFlagSet("done", flag.ExitOnError)
 
 	argLen := len(os.Args)
-	if argLen < 2 || argLen > 2 {
-		fmt.Println("Usage: todo [\"title\" | ls | done <...index>]")
+	if argLen < 2 {
+		fmt.Println("Usage: todo [\"title\" | ls | done <i...>]")
 		return
 	}
 
 	switch os.Args[1] {
 	case "ls":
 		// read all into memory
-		// print out with array/slice index
+		// print out with array/slice i
 		err := lsCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Fatal(err)
@@ -45,15 +46,63 @@ func main() {
 		// delete the ones with the indexes
 		// write back to db in order
 
+		// parse the indexes
 		err := doneCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("mark as done", doneCmd.Args())
+
+		// make a map of indexes
+		var doneMap = make(map[int]bool)
+		for _, arg := range doneCmd.Args() {
+			index, err := strconv.Atoi(arg)
+			if err != nil {
+				log.Fatal(err)
+			}
+			doneMap[index] = true
+		}
+
+		// read todos from db
+		var todos []Todo
+		rows, err := db.Query("select title from todos")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var todo Todo
+			err = rows.Scan(&todo.title)
+			if err != nil {
+				log.Fatal(err)
+			}
+			todos = append(todos, todo)
+		}
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// delete todos from db
+		for i, todo := range todos {
+			if doneMap[i+1] {
+				// delete todos with the same title
+				_, err := db.Exec("delete from todos where title = ?", todo.title)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+		listTodos(db)
+
+	case "clear":
+		_, err := db.Exec("delete from todos")
+		if err != nil {
+			log.Fatal(err)
+		}
 		listTodos(db)
 
 	default:
-		_, err := db.Exec("insert into todos (title, done) values (?, ?)", os.Args[1], false)
+		_, err := db.Exec("insert into todos (title) values (?)", strings.Join(os.Args[1:], " "), false)
 		if err != nil {
 			log.Fatal(err)
 		}
