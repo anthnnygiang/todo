@@ -1,134 +1,99 @@
 package main
 
 import (
-	"database/sql"
-	"flag"
+	"bufio"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
-	"log"
+	"github.com/alecthomas/kong"
+	"io"
 	"os"
 	"strconv"
-	"strings"
 )
 
-type Todo struct {
-	title string
+var CLI struct {
+	Add struct {
+		Todo string `arg:"" help:"Text of todo item."`
+	} `cmd:"" help:"Add a todo item."`
+
+	List struct{} `cmd:"" help:"List all todo items."`
+
+	Done struct {
+		//All     bool     `help:"Complete all todo items."`
+		Numbers []string `help:"Todo items to complete" arg:"" optional:""`
+	} `cmd:"" help:"Complete one or more todo items."`
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
 }
 
 func main() {
-	db, err := sql.Open("sqlite3", "./todos.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
+	file, err := os.OpenFile("todos.txt", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	check(err)
+	defer func(file *os.File) {
+		err := file.Close()
+		check(err)
+	}(file)
 
-	lsCmd := flag.NewFlagSet("ls", flag.ExitOnError)
-	doneCmd := flag.NewFlagSet("done", flag.ExitOnError)
+	ctx := kong.Parse(&CLI)
+	switch ctx.Command() {
+	case "add <todo>":
+		_, err = file.Write([]byte(fmt.Sprintf("%s\n", CLI.Add.Todo)))
+		check(err)
+		list(file)
 
-	argLen := len(os.Args)
-	if argLen < 2 {
-		fmt.Println("Usage: todo [\"title\" | ls | done <i...>]")
-		return
-	}
+	case "done <numbers>":
+		//if CLI.Done.All {
+		//	err := os.Truncate("todos.txt", 0)
+		//	check(err)
+		//	return
+		//}
 
-	switch os.Args[1] {
-	case "ls":
-		// read all into memory
-		// print out with array/slice i
-		err := lsCmd.Parse(os.Args[2:])
-		if err != nil {
-			log.Fatal(err)
-		}
-		listTodos(db)
-
-	case "done":
-		// mark all with indexes as done
-		// delete the ones with the indexes
-		// write back to db in order
-
-		// parse the indexes
-		err := doneCmd.Parse(os.Args[2:])
-		if err != nil {
-			log.Fatal(err)
+		numbersMap := make(map[int]bool)
+		for _, n := range CLI.Done.Numbers {
+			num, err := strconv.Atoi(n)
+			check(err)
+			numbersMap[num] = true
 		}
 
-		// make a map of indexes
-		var doneMap = make(map[int]bool)
-		for _, arg := range doneCmd.Args() {
-			index, err := strconv.Atoi(arg)
-			if err != nil {
-				log.Fatal(err)
+		var newTodoLines []string
+		fileScanner := bufio.NewScanner(file)
+		fileScanner.Split(bufio.ScanLines)
+		for i := 1; fileScanner.Scan(); i++ {
+			if numbersMap[i] {
+				continue
 			}
-			doneMap[index] = true
+			newTodoLines = append(newTodoLines, fileScanner.Text())
 		}
 
-		// read todos from db
-		var todos []Todo
-		rows, err := db.Query("select title from todos")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var todo Todo
-			err = rows.Scan(&todo.title)
-			if err != nil {
-				log.Fatal(err)
-			}
-			todos = append(todos, todo)
-		}
-		err = rows.Err()
-		if err != nil {
-			log.Fatal(err)
-		}
+		err = file.Truncate(0)
+		check(err)
 
-		// delete todos from db
-		for i, todo := range todos {
-			if doneMap[i+1] {
-				// delete todos with the same title
-				_, err := db.Exec("delete from todos where title = ?", todo.title)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
+		for _, line := range newTodoLines {
+			_, err := file.Write([]byte(fmt.Sprintf("%s\n", line)))
+			check(err)
 		}
-		listTodos(db)
+		list(file)
 
-	case "clear":
-		_, err := db.Exec("delete from todos")
-		if err != nil {
-			log.Fatal(err)
-		}
-		listTodos(db)
+	case "list":
+		list(file)
 
 	default:
-		_, err := db.Exec("insert into todos (title) values (?)", strings.Join(os.Args[1:], " "), false)
-		if err != nil {
-			log.Fatal(err)
-		}
-		listTodos(db)
+		panic(ctx.Command())
 	}
 }
 
-func listTodos(db *sql.DB) {
-	rows, err := db.Query("select title from todos")
-	if err != nil {
-		log.Fatal(err)
+func list(file *os.File) {
+	_, err := file.Seek(0, io.SeekStart)
+	check(err)
+	fileScanner := bufio.NewScanner(file)
+	fileScanner.Split(bufio.ScanLines)
+	var todoLines []string
+	for fileScanner.Scan() {
+		todoLines = append(todoLines, fileScanner.Text())
 	}
-	defer rows.Close()
-
-	var index int = 1
-	for rows.Next() {
-		var todo Todo
-		err = rows.Scan(&todo.title)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("%d. %+v\n", index, todo.title)
-		index++
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
+	for i, line := range todoLines {
+		fmt.Printf("%d. %s\n", i+1, line)
 	}
 }
