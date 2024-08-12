@@ -1,23 +1,22 @@
 # Todo CLI
 
 ## Installation
-`$ go install .`
-
-## Setup
-Create a SQLite database store
-`$ sqlite3 todo.db < init.sql`
+`$ go install`
 
 ## Usage
-* `todo "todo"`: Add a todo
-* `todo ls`: List todos
-* `todo done ...id`: Complete a todo 
+* `todo add "buy strawberries"`: Add a todo item
+* `todo list`: Print all todo items
+* `todo done [number ...]`: Complete todo items with the given numbers
 
 Example usage:
 ```
-$ todo "do something"
+$ todo add "buy strawberries"
+$ todo add "buy bananas"
 
-$ todo ls
-1. do something
+$ todo list
+1. buy strawberries
+2. buy bananas
 
 $ todo done 1
+1. buy bananas
 ```
