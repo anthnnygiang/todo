@@ -18,7 +18,7 @@ var CLI struct {
 	} `cmd:"" help:"Add a todo item."`
 
 	Done struct {
-		Number []string `help:"Todo items to complete" arg:"" optional:""`
+		Number []string `help:"Todo items to complete." arg:"" optional:""`
 	} `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
 
