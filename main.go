@@ -11,7 +11,7 @@ import (
 )
 
 var CLI struct {
-	List struct{} `cmd:"" help:"List all todo items."`
+	List struct{} `cmd:"" help:"List all todo items." aliases:"ls"`
 
 	Add struct {
 		Todo string `arg:"" help:"Name of todo item."`
