@@ -1,5 +1,7 @@
 # Todo CLI
 
+Simple todo CLI written in Go.
+
 ## Installation
 1. Clone the repository.
 2. `go install main.go`
