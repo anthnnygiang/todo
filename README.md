@@ -1,22 +1,23 @@
 # Todo CLI
 
 ## Installation
-`$ go install`
+1. Clone the repository.
+2. `go install main.go`
 
 ## Usage
-* `todo add "buy strawberries"`: Add a todo item
-* `todo list`: Print all todo items
-* `todo done [number ...]`: Complete todo items with the given numbers
-
-Example usage:
+1. Add a todo.
 ```
 $ todo add "buy strawberries"
 $ todo add "buy bananas"
-
+```
+2. List all todos.
+```
 $ todo list
 1. buy strawberries
 2. buy bananas
-
+```
+3. Mark a todo as done.
+```
 $ todo done 1
 1. buy bananas
 ```
