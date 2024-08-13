@@ -1,10 +1,12 @@
 # Todo CLI
 
-Simple todo CLI written in Go.
+Simple todo CLI written in Go.\
+`$ todo -h` for help.
 
 ## Installation
 1. Clone the repository.
 2. `go install main.go`
+
 
 ## Usage
 1. Add a todo.
