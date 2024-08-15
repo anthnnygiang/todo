@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -22,11 +23,14 @@ var CLI struct {
 	} `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
 
-const filename = "todos.txt"
-
 func main() {
-	// Try to append to the file, if it doesn't exist, create it.
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	// Open the file for reading and writing.
+	home, err := os.UserHomeDir()
+	check(err)
+	filename := filepath.Join(home, "dev", "todo", "todos.txt")
+	_, err = os.Stat(filename)
+	check(err)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_RDWR, 0644)
 	check(err)
 	defer func(file *os.File) {
 		err := file.Close()
