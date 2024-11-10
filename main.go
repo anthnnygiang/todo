@@ -54,7 +54,7 @@ func main() {
 
 	case "add <title>":
 		input := CLI.Add.Title
-		_, err = file.Write([]byte(fmt.Sprintf("%s", input)))
+		_, err = file.Write([]byte(fmt.Sprintf("%s\n", input)))
 		check(err)
 		list(file)
 
