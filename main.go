@@ -22,12 +22,13 @@ const Gray = "\033[37m"
 const White = "\033[97m"
 
 var CLI struct {
-	List struct{} `cmd:"" help:"List all todo items." aliases:"ls"`
+	Ls struct{} `cmd:"" help:"List all todo items."`
 
 	Add struct {
+		Title string `help:"Title of the todo item." arg:""`
 	} `cmd:"" help:"Add a todo item."`
 
-	Done struct {
+	Rm struct {
 		Number []string `help:"Todo items to complete." arg:"" optional:""`
 	} `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
@@ -48,29 +49,23 @@ func main() {
 
 	ctx := kong.Parse(&CLI)
 	switch ctx.Command() {
-	case "list":
+	case "ls":
 		list(file)
 
-	case "add":
-		reader := bufio.NewReader(os.Stdin)
-		_, err = fmt.Printf("%s%s%s", Cyan, "title: ", Reset)
-		check(err)
-
-		input, err := reader.ReadString('\n')
-		check(err)
-
+	case "add <title>":
+		input := CLI.Add.Title
 		_, err = file.Write([]byte(fmt.Sprintf("%s", input)))
 		check(err)
 		list(file)
 
-	case "done":
+	case "rm":
 		err := os.Truncate(filename, 0)
 		check(err)
 
-	case "done <number>":
+	case "rm <number>":
 		// Create a map of numbers to check quickly.
 		numbersMap := make(map[int]bool)
-		for _, n := range CLI.Done.Number {
+		for _, n := range CLI.Rm.Number {
 			num, err := strconv.Atoi(n)
 			check(err)
 			numbersMap[num] = true
@@ -97,7 +92,7 @@ func main() {
 		list(file)
 
 	default:
-		fmt.Println("Unknown command.")
+		fmt.Println("Unknown command:", ctx.Command())
 	}
 }
 

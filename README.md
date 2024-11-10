@@ -16,12 +16,12 @@ $ todo add "buy bananas"
 ```
 2. List all todos.
 ```
-$ todo list
+$ todo ls
 1. buy strawberries
 2. buy bananas
 ```
 3. Mark a todo as done.
 ```
-$ todo done 1
+$ todo rm 1
 1. buy bananas
 ```
