@@ -47,6 +47,7 @@ func main() {
 		check(err)
 	}(file)
 
+	// errors are handled automatically
 	ctx := kong.Parse(&CLI)
 	switch ctx.Command() {
 	case "ls":
@@ -90,9 +91,6 @@ func main() {
 			check(err)
 		}
 		list(file)
-
-	default:
-		fmt.Println("Unknown command:", ctx.Command())
 	}
 }
 
