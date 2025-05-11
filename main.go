@@ -3,12 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/alecthomas/kong"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/alecthomas/kong"
 )
 
 const Reset = "\033[0m"
