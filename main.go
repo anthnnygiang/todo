@@ -34,11 +34,13 @@ var CLI struct {
 	} `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
 
+var repositoryPath = "dev/.asleep/todo"
+
 func main() {
 	// Open the file for reading and writing.
 	home, err := os.UserHomeDir()
 	check(err)
-	filename := filepath.Join(home, "dev", "todo", "todos.txt")
+	filename := filepath.Join(home, repositoryPath, "todos.txt")
 	_, err = os.Stat(filename)
 	check(err)
 	file, err := os.OpenFile(filename, os.O_APPEND|os.O_RDWR, 0644)
