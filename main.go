@@ -108,6 +108,9 @@ func list(file *os.File) {
 	for fileScanner.Scan() {
 		todoLines = append(todoLines, fileScanner.Text())
 	}
+	if len(todoLines) == 0 {
+		fmt.Println("All done!")
+	}
 	for i, line := range todoLines {
 		fmt.Printf("%s%d.%s %s\n", Green, i+1, Reset, line)
 	}
