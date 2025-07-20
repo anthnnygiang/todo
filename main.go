@@ -58,7 +58,8 @@ func main() {
 
 	case "add <title>":
 		input := CLI.Add.Title
-		_, err = file.Write([]byte(fmt.Sprintf("%s\n", input)))
+		bytes := make([]byte, 0)
+		_, err = file.Write(fmt.Appendf(bytes, "%s\n", input))
 		check(err)
 		list(file)
 
@@ -90,7 +91,8 @@ func main() {
 		check(err)
 
 		for _, line := range remainingTodos {
-			_, err := file.Write([]byte(fmt.Sprintf("%s\n", line)))
+			bytes := make([]byte, 0)
+			_, err := file.Write(fmt.Appendf(bytes, "%s\n", line))
 			check(err)
 		}
 		list(file)
@@ -109,7 +111,7 @@ func list(file *os.File) {
 		todoLines = append(todoLines, fileScanner.Text())
 	}
 	if len(todoLines) == 0 {
-		fmt.Println("All done!")
+		fmt.Printf("%sAll done!%s\n", Green, Reset)
 	}
 	for i, line := range todoLines {
 		fmt.Printf("%s%d.%s %s\n", Green, i+1, Reset, line)
