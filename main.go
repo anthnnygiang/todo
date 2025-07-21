@@ -28,28 +28,24 @@ var CLI struct {
 	} `cmd:"" help:"List all todo items."`
 
 	Add struct {
-		Dir   bool   `short:"d" help:"Add a todo directory."`
-		Title string `arg:"" help:"Title of the todo item." `
+		Title string `help:"Title of the todo item." arg:""`
 	} `cmd:"" help:"Add a todo item."`
 
 	Rm struct {
-		Number []string `arg:"" optional:"" help:"Todo items to complete."`
+		Number []string `help:"Todo items to complete." arg:"" optional:""`
 	} `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
 
 var repositoryPath = "dev/.asleep/todo"
-var defaultDir = "todos.txt"
 
 func main() {
 	// Open the file for reading and writing.
 	home, err := os.UserHomeDir()
 	check(err)
-	filename := filepath.Join(home, repositoryPath, defaultDir)
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		fmt.Printf("%s%s does not exist.%s\n", Yellow, defaultDir, Reset)
-		fmt.Printf("%sCreating %s...%s\n", Yellow, defaultDir, Reset)
-	}
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	filename := filepath.Join(home, repositoryPath, "todos.txt")
+	_, err = os.Stat(filename)
+	check(err)
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_RDWR, 0644)
 	check(err)
 	defer func(file *os.File) {
 		err := file.Close()
@@ -75,27 +71,11 @@ func main() {
 		list(file)
 
 	case "add <title>":
-		title := CLI.Add.Title
-		isDir := CLI.Add.Dir
-		if !isDir {
-			bytes := make([]byte, 0)
-			_, err = file.Write(fmt.Appendf(bytes, "%s\n", title))
-			check(err)
-			list(file)
-			return
-		}
-		// create a empty text file
-		filePath := filepath.Join(home, repositoryPath, title+".txt")
-		if _, err := os.Stat(filePath); !os.IsNotExist(err) {
-			fmt.Printf("%s%s already exists.%s\n", Red, title+".txt", Reset)
-			return
-		}
-		file, err = os.OpenFile(filePath, os.O_CREATE, 0644)
+		input := CLI.Add.Title
+		bytes := make([]byte, 0)
+		_, err = file.Write(fmt.Appendf(bytes, "%s\n", input))
 		check(err)
-		defer func(file *os.File) {
-			err := file.Close()
-			check(err)
-		}(file)
+		list(file)
 
 	case "rm":
 		err := os.Truncate(filename, 0)
@@ -130,9 +110,6 @@ func main() {
 			check(err)
 		}
 		list(file)
-
-	default:
-		fmt.Printf("%sUnknown command: %s%s\n", Red, ctx.Command(), Reset)
 	}
 }
 
