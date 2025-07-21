@@ -23,9 +23,7 @@ const Gray = "\033[37m"
 const White = "\033[97m"
 
 var CLI struct {
-	Ls struct {
-		Dir string `arg:"" optional:"" help:"List all todos in a directory."`
-	} `cmd:"" help:"List all todo items."`
+	Ls struct{} `cmd:"" help:"List all todo items."`
 
 	Add struct {
 		Title string `help:"Title of the todo item." arg:""`
@@ -37,15 +35,19 @@ var CLI struct {
 }
 
 var repositoryPath = "dev/.asleep/todo"
+var todosFile = "todos.txt"
 
 func main() {
 	// Open the file for reading and writing.
 	home, err := os.UserHomeDir()
 	check(err)
-	filename := filepath.Join(home, repositoryPath, "todos.txt")
-	_, err = os.Stat(filename)
-	check(err)
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_RDWR, 0644)
+	filename := filepath.Join(home, repositoryPath, todosFile)
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		// if the file does not exist, create it
+		fmt.Printf("%s%s does not exist.%s\n", Red, todosFile, Reset)
+		fmt.Printf("%sCreating %s...%s\n", Red, todosFile, Reset)
+	}
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	check(err)
 	defer func(file *os.File) {
 		err := file.Close()
@@ -56,18 +58,6 @@ func main() {
 	ctx := kong.Parse(&CLI)
 	switch ctx.Command() {
 	case "ls":
-		dir := CLI.Ls.Dir
-		if dir == "" {
-			list(file)
-			return
-		}
-		// if a directory is specified, list all todos in that directory
-		filePath := filepath.Join(home, repositoryPath, dir+".txt")
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			fmt.Printf("%s%s does not exist.%s\n", Red, dir+".txt", Reset)
-			return
-		}
-		file, err = os.OpenFile(filePath, os.O_RDONLY, 0644)
 		list(file)
 
 	case "add <title>":
