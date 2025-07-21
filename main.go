@@ -23,7 +23,9 @@ const Gray = "\033[37m"
 const White = "\033[97m"
 
 var CLI struct {
-	Ls struct{} `cmd:"" help:"List all todo items."`
+	Ls struct {
+		Dir string `arg:"" optional:"" help:"List all todos in a directory."`
+	} `cmd:"" help:"List all todo items."`
 
 	Add struct {
 		Dir   bool   `short:"d" help:"Add a todo directory."`
@@ -58,6 +60,18 @@ func main() {
 	ctx := kong.Parse(&CLI)
 	switch ctx.Command() {
 	case "ls":
+		dir := CLI.Ls.Dir
+		if dir == "" {
+			list(file)
+			return
+		}
+		// if a directory is specified, list all todos in that directory
+		filePath := filepath.Join(home, repositoryPath, dir+".txt")
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			fmt.Printf("%s%s does not exist.%s\n", Red, dir+".txt", Reset)
+			return
+		}
+		file, err = os.OpenFile(filePath, os.O_RDONLY, 0644)
 		list(file)
 
 	case "add <title>":
