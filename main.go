@@ -40,7 +40,6 @@ const StrikeThrough = "\033[9m"
 
 var repositoryPath = "dev/.zzz/todo"
 var todosFile = "todos.txt"
-var todosTestFile = "todos_test.txt"
 
 type CLI struct {
 	Ls  LsCmd  `cmd:"" help:"List all todo items."`
@@ -63,7 +62,13 @@ type RmCmd struct {
 }
 
 func main() {
-	file, err := openFile(todosFile)
+	// open Todo file
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+	filename := filepath.Join(home, repositoryPath, todosFile)
+	file, err := openFile(filename)
 	if err != nil {
 		return
 	}
@@ -110,6 +115,7 @@ func (c *RmCmd) Run() error {
 	// if no numbers are provided, complete all todo items
 	if len(c.Number) == 0 {
 		c.File.Truncate(0)
+		list(c.Out, c.File)
 		return nil
 	}
 
@@ -175,13 +181,7 @@ func list(out io.Writer, file *os.File) error {
 	return nil
 }
 
-func openFile(todosFile string) (*os.File, error) {
-	// open Todo file
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	filename := filepath.Join(home, repositoryPath, todosFile)
+func openFile(filename string) (*os.File, error) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		fmt.Printf("%s%s does not exist.%s\n", Red, todosFile, Reset)
 		fmt.Printf("%screating %s...%s\n", BrightYellow, todosFile, Reset)
