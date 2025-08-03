@@ -46,17 +46,25 @@ type CLI struct {
 	Add AddCmd `cmd:"" help:"Add a todo item."`
 	Rm  RmCmd  `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
-type LsCmd struct{}
+type LsCmd struct {
+	Out io.Writer `kong:"-"`
+}
 type AddCmd struct {
-	Title string `help:"Title of the todo item." arg:""`
+	Title string    `help:"Title of the todo item." arg:""`
+	Out   io.Writer `kong:"-"`
 }
 type RmCmd struct {
-	Number []string `help:"Todo items to complete." arg:"" optional:""`
+	Number []string  `help:"Todo items to complete." arg:"" optional:""`
+	Out    io.Writer `kong:"-"`
 }
 
 func main() {
 	// errors are handled automatically
-	CLISpec := CLI{}
+	CLISpec := CLI{
+		Ls: LsCmd{
+			Out: os.Stdout,
+		},
+	}
 	ctx := kong.Parse(&CLISpec)
 	if err := ctx.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -69,7 +77,7 @@ func (c *LsCmd) Run() error {
 	if err != nil {
 		return err
 	}
-	list(file)
+	list(c.Out, file)
 	defer closeFile(file)
 	return nil
 }
@@ -85,7 +93,7 @@ func (c *AddCmd) Run() error {
 	if _, err = file.Write(fmt.Appendf(bytes, "%s\n", input)); err != nil {
 		return err
 	}
-	list(file)
+	list(c.Out, file)
 	defer closeFile(file)
 	return nil
 }
@@ -136,7 +144,7 @@ func (c *RmCmd) Run() error {
 			return err
 		}
 	}
-	list(file)
+	list(c.Out, file)
 	defer closeFile(file)
 	return nil
 }
@@ -146,7 +154,7 @@ func run() {
 }
 
 // list prints all items in the file.
-func list(file *os.File) error {
+func list(out io.Writer, file *os.File) error {
 	// Reset the file pointer to the beginning.
 	_, err := file.Seek(0, io.SeekStart)
 	if err != nil {
@@ -159,10 +167,10 @@ func list(file *os.File) error {
 		todoLines = append(todoLines, fileScanner.Text())
 	}
 	if len(todoLines) == 0 {
-		fmt.Printf("%sall done!%s\n", Green, Reset)
+		fmt.Fprintf(out, "%sall done!%s\n", Green, Reset)
 	}
 	for i, line := range todoLines {
-		fmt.Printf("%s%s%d.%s %s\n", Green, Bold, i+1, Reset, line)
+		fmt.Fprintf(out, "%s%s%d.%s %s\n", Green, Bold, i+1, Reset, line)
 	}
 	return nil
 }
