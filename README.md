@@ -1,4 +1,4 @@
-# Todo CLI
+# Todo
 
 Simple todo CLI written in Go.\
 `$ todo -h` for help.
