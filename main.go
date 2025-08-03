@@ -48,28 +48,38 @@ type CLI struct {
 	Rm  RmCmd  `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
 type LsCmd struct {
-	Out io.Writer `kong:"-"`
+	Out  io.Writer `kong:"-"`
+	File *os.File  `kong:"-"`
 }
 type AddCmd struct {
 	Title string    `help:"Title of the todo item." arg:""`
 	Out   io.Writer `kong:"-"`
+	File  *os.File  `kong:"-"`
 }
 type RmCmd struct {
 	Number []string  `help:"Todo items to complete." arg:"" optional:""`
 	Out    io.Writer `kong:"-"`
+	File   *os.File  `kong:"-"`
 }
 
 func main() {
+	file, err := openFile(todosFile)
+	if err != nil {
+		return
+	}
 	// errors are handled automatically
 	CLISpec := CLI{
 		Ls: LsCmd{
-			Out: os.Stdout,
+			Out:  os.Stdout,
+			File: file,
 		},
 		Add: AddCmd{
-			Out: os.Stdout,
+			Out:  os.Stdout,
+			File: file,
 		},
 		Rm: RmCmd{
-			Out: os.Stdout,
+			Out:  os.Stdout,
+			File: file,
 		},
 	}
 	ctx := kong.Parse(&CLISpec)
@@ -80,39 +90,26 @@ func main() {
 }
 
 func (c *LsCmd) Run() error {
-	file, err := openFile()
-	if err != nil {
-		return err
-	}
-	list(c.Out, file)
-	defer closeFile(file)
+	list(c.Out, c.File)
+	defer closeFile(c.File)
 	return nil
 }
 
 func (c *AddCmd) Run() error {
-	file, err := openFile()
-	if err != nil {
-		return err
-	}
-
 	input := c.Title
 	bytes := make([]byte, 0)
-	if _, err = file.Write(fmt.Appendf(bytes, "%s\n", input)); err != nil {
+	if _, err := c.File.Write(fmt.Appendf(bytes, "%s\n", input)); err != nil {
 		return err
 	}
-	list(c.Out, file)
-	defer closeFile(file)
+	list(c.Out, c.File)
+	defer closeFile(c.File)
 	return nil
 }
 
 func (c *RmCmd) Run() error {
-	file, err := openFile()
-	if err != nil {
-		return err
-	}
 	// if no numbers are provided, complete all todo items
 	if len(c.Number) == 0 {
-		file.Truncate(0)
+		c.File.Truncate(0)
 		return nil
 	}
 
@@ -128,7 +125,7 @@ func (c *RmCmd) Run() error {
 
 	// read the file and keep todos that are not in numbersMap
 	var remainingTodos []string
-	fileScanner := bufio.NewScanner(file)
+	fileScanner := bufio.NewScanner(c.File)
 	fileScanner.Split(bufio.ScanLines)
 	for i := 1; fileScanner.Scan(); i++ {
 		if numbersMap[i] {
@@ -137,22 +134,22 @@ func (c *RmCmd) Run() error {
 		remainingTodos = append(remainingTodos, fileScanner.Text())
 	}
 
-	if err = file.Truncate(0); err != nil {
+	if err := c.File.Truncate(0); err != nil {
 		return err
 	}
-	if _, err = file.Seek(0, io.SeekStart); err != nil {
+	if _, err := c.File.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
 
 	for _, line := range remainingTodos {
 		bytes := make([]byte, 0)
-		_, err := file.Write(fmt.Appendf(bytes, "%s\n", line))
+		_, err := c.File.Write(fmt.Appendf(bytes, "%s\n", line))
 		if err != nil {
 			return err
 		}
 	}
-	list(c.Out, file)
-	defer closeFile(file)
+	list(c.Out, c.File)
+	defer closeFile(c.File)
 	return nil
 }
 
@@ -178,7 +175,7 @@ func list(out io.Writer, file *os.File) error {
 	return nil
 }
 
-func openFile() (*os.File, error) {
+func openFile(todosFile string) (*os.File, error) {
 	// open Todo file
 	home, err := os.UserHomeDir()
 	if err != nil {
