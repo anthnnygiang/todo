@@ -4,10 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/alecthomas/kong"
 )
@@ -34,80 +32,99 @@ var CLI struct {
 	} `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
 
+type CLI2 struct {
+	Ls  LsCmd  `cmd:"" help:"List all todo items."`
+	Add AddCmd `cmd:"" help:"Add a todo item."`
+	Rm  RmCmd  `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
+}
+type LsCmd struct{}
+type AddCmd struct {
+	Title string `help:"Title of the todo item." arg:""`
+}
+type RmCmd struct {
+	Number []string `help:"Todo items to complete." arg:"" optional:""`
+}
+
+func (c *LsCmd) Run() error {
+	file, err := openFile()
+	if err != nil {
+		return err
+	}
+	list(file)
+	defer closeFile(file)
+	return nil
+}
+
 var repositoryPath = "dev/.zzz/todo"
 var todosFile = "todos.txt"
 
+func run() {
+	fmt.Print("TODO.")
+}
+
 func main() {
-	// Open the file for reading and writing.
-	home, err := os.UserHomeDir()
-	check(err)
-	filename := filepath.Join(home, repositoryPath, todosFile)
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		// if the file does not exist, create it
-		fmt.Printf("%s%s does not exist.%s\n", Red, todosFile, Reset)
-		fmt.Printf("%sCreating %s...%s\n", Red, todosFile, Reset)
-	}
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
-	check(err)
-	defer func(file *os.File) {
-		err := file.Close()
-		check(err)
-	}(file)
-
 	// errors are handled automatically
-	ctx := kong.Parse(&CLI)
-	switch ctx.Command() {
-	case "ls":
-		list(file)
-
-	case "add <title>":
-		input := CLI.Add.Title
-		bytes := make([]byte, 0)
-		_, err = file.Write(fmt.Appendf(bytes, "%s\n", input))
-		check(err)
-		list(file)
-
-	case "rm":
-		err := os.Truncate(filename, 0)
-		check(err)
-
-	case "rm <number>":
-		// Create a map of numbers to check quickly.
-		numbersMap := make(map[int]bool)
-		for _, n := range CLI.Rm.Number {
-			num, err := strconv.Atoi(n)
-			check(err)
-			numbersMap[num] = true
-		}
-
-		// Read the file and skip lines that are in numbersMap.
-		var remainingTodos []string
-		fileScanner := bufio.NewScanner(file)
-		fileScanner.Split(bufio.ScanLines)
-		for i := 1; fileScanner.Scan(); i++ {
-			if numbersMap[i] {
-				continue
-			}
-			remainingTodos = append(remainingTodos, fileScanner.Text())
-		}
-
-		err = file.Truncate(0)
-		check(err)
-
-		for _, line := range remainingTodos {
-			bytes := make([]byte, 0)
-			_, err := file.Write(fmt.Appendf(bytes, "%s\n", line))
-			check(err)
-		}
-		list(file)
+	CLISpec := CLI2{}
+	ctx := kong.Parse(&CLISpec)
+	if err := ctx.Run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
+
+	// switch ctx.Command() {
+	// case "ls":
+	// 	list(file)
+
+	// case "add <title>":
+	// 	input := CLI.Add.Title
+	// 	bytes := make([]byte, 0)
+	// 	_, err = file.Write(fmt.Appendf(bytes, "%s\n", input))
+	// 	check(err)
+	// 	list(file)
+
+	// case "rm":
+	// 	err := os.Truncate(filename, 0)
+	// 	check(err)
+
+	// case "rm <number>":
+	// 	// Create a map of numbers to check quickly.
+	// 	numbersMap := make(map[int]bool)
+	// 	for _, n := range CLI.Rm.Number {
+	// 		num, err := strconv.Atoi(n)
+	// 		check(err)
+	// 		numbersMap[num] = true
+	// 	}
+
+	// 	// Read the file and skip lines that are in numbersMap.
+	// 	var remainingTodos []string
+	// 	fileScanner := bufio.NewScanner(file)
+	// 	fileScanner.Split(bufio.ScanLines)
+	// 	for i := 1; fileScanner.Scan(); i++ {
+	// 		if numbersMap[i] {
+	// 			continue
+	// 		}
+	// 		remainingTodos = append(remainingTodos, fileScanner.Text())
+	// 	}
+
+	// 	err = file.Truncate(0)
+	// 	check(err)
+
+	// 	for _, line := range remainingTodos {
+	// 		bytes := make([]byte, 0)
+	// 		_, err := file.Write(fmt.Appendf(bytes, "%s\n", line))
+	// 		check(err)
+	// 	}
+	// 	list(file)
+	// }
 }
 
 // list prints all items in the file.
-func list(file *os.File) {
+func list(file *os.File) error {
 	// Reset the file pointer to the beginning.
 	_, err := file.Seek(0, io.SeekStart)
-	check(err)
+	if err != nil {
+		return err
+	}
 	fileScanner := bufio.NewScanner(file)
 	fileScanner.Split(bufio.ScanLines)
 	var todoLines []string
@@ -120,11 +137,30 @@ func list(file *os.File) {
 	for i, line := range todoLines {
 		fmt.Printf("%s%d.%s %s\n", Green, i+1, Reset, line)
 	}
+	return nil
 }
 
-// check panics if an error is not nil.
-func check(err error) {
+func openFile() (*os.File, error) {
+	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
+	filename := filepath.Join(home, repositoryPath, todosFile)
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		fmt.Printf("%s%s does not exist.%s\n", Red, todosFile, Reset)
+		fmt.Printf("%sCreating %s...%s\n", Red, todosFile, Reset)
+	}
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+func closeFile(file *os.File) error {
+	err := file.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
