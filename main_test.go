@@ -16,14 +16,21 @@ func TestAdd(t *testing.T) {
 }
 
 func TestLsCmd(t *testing.T) {
-	CLISpec := CLI{}
+	out := &bytes.Buffer{}
+	CLISpec := CLI{
+		Ls: LsCmd{
+			Out: out,
+		},
+		Add: AddCmd{
+			Out: out,
+		},
+		Rm: RmCmd{
+			Out: out,
+		},
+	}
 
 	// Set up a parser that writes to a buffer instead of os.Stdout.
-	out := &bytes.Buffer{}
-	parser := kong.Must(&CLISpec,
-		kong.Writers(out, out),
-		kong.Exit(func(int) { /* prevent os.Exit */ }),
-	)
+	parser := kong.Must(&CLISpec)
 
 	args := []string{"ls"}
 	ctx, err := parser.Parse(args)

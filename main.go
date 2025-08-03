@@ -40,6 +40,7 @@ const StrikeThrough = "\033[9m"
 
 var repositoryPath = "dev/.zzz/todo"
 var todosFile = "todos.txt"
+var todosTestFile = "todos_test.txt"
 
 type CLI struct {
 	Ls  LsCmd  `cmd:"" help:"List all todo items."`
@@ -62,6 +63,12 @@ func main() {
 	// errors are handled automatically
 	CLISpec := CLI{
 		Ls: LsCmd{
+			Out: os.Stdout,
+		},
+		Add: AddCmd{
+			Out: os.Stdout,
+		},
+		Rm: RmCmd{
 			Out: os.Stdout,
 		},
 	}
@@ -147,10 +154,6 @@ func (c *RmCmd) Run() error {
 	list(c.Out, file)
 	defer closeFile(file)
 	return nil
-}
-
-func run() {
-	fmt.Print("TODO.")
 }
 
 // list prints all items in the file.
