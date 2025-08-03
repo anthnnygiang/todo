@@ -34,7 +34,7 @@ var CLI struct {
 	} `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
 }
 
-var repositoryPath = "dev/.asleep/todo"
+var repositoryPath = "dev/.zzz/todo"
 var todosFile = "todos.txt"
 
 func main() {
