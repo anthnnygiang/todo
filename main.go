@@ -55,6 +55,23 @@ func (c *LsCmd) Run() error {
 	return nil
 }
 
+func (c *AddCmd) Run() error {
+	file, err := openFile()
+	if err != nil {
+		return err
+	}
+
+	input := c.Title
+	bytes := make([]byte, 0)
+	_, err = file.Write(fmt.Appendf(bytes, "%s\n", input))
+	if err != nil {
+		return err
+	}
+	list(file)
+	defer closeFile(file)
+	return nil
+}
+
 var repositoryPath = "dev/.zzz/todo"
 var todosFile = "todos.txt"
 
