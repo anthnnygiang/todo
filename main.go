@@ -49,6 +49,7 @@ func main() {
 	if err != nil {
 		return
 	}
+	defer closeFile(file)
 	// errors are handled automatically
 	CLISpec := CLI{
 		Ls: LsCmd{
@@ -73,7 +74,6 @@ func main() {
 
 func (c *LsCmd) Run() error {
 	list(c.Out, c.File)
-	defer closeFile(c.File)
 	return nil
 }
 
@@ -84,7 +84,6 @@ func (c *AddCmd) Run() error {
 		return err
 	}
 	list(c.Out, c.File)
-	defer closeFile(c.File)
 	return nil
 }
 
@@ -133,7 +132,6 @@ func (c *RmCmd) Run() error {
 		}
 	}
 	list(c.Out, c.File)
-	defer closeFile(c.File)
 	return nil
 }
 
