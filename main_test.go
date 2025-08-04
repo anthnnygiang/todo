@@ -64,7 +64,7 @@ func TestCLICmds(t *testing.T) {
 	// Prepare fresh testdata
 	tmp := t.TempDir()
 	if err := copyDir(testDataDir, tmp); err != nil {
-		t.Fatalf("copyDir failed: %v", err)
+		t.Fatalf("copyDir(%q, tmp) failed: %v", testDataDir, err)
 	}
 
 	for _, tc := range tests {
@@ -89,10 +89,10 @@ func TestCLICmds(t *testing.T) {
 			parser := kong.Must(&spec)
 			ctx, err := parser.Parse(tc.args)
 			if err != nil {
-				t.Fatalf("Parse(%v) failed: %v", tc.args, err)
+				t.Fatalf("parse(%v) failed: %v", tc.args, err)
 			}
 			if err := ctx.Run(ctx); err != nil {
-				t.Fatalf("Run failed: %v", err)
+				t.Fatalf("run failed: %v", err)
 			}
 
 			got := out.String()
