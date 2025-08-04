@@ -12,34 +12,14 @@ import (
 )
 
 const Reset = "\033[0m"
-const Black = "\033[30m"
+const Bold = "\033[1m"
 const Red = "\033[31m"
 const Green = "\033[32m"
-const Yellow = "\033[33m"
-const Blue = "\033[34m"
-const Magenta = "\033[35m"
-const Cyan = "\033[36m"
-const Gray = "\033[37m"
-const BrightBlack = "\033[90m"
-const BrightRed = "\033[91m"
-const BrightGreen = "\033[92m"
-const BrightYellow = "\033[93m"
-const BrightBlue = "\033[94m"
-const BrightMagenta = "\033[95m"
-const BrightCyan = "\033[96m"
-const White = "\033[97m"
 
-const Bold = "\033[1m"
-const Dim = "\033[2m"
-const Italic = "\033[3m"
-const Underline = "\033[4m"
-const Blink = "\033[5m"
-const Reverse = "\033[7m"
-const Hidden = "\033[8m"
-const StrikeThrough = "\033[9m"
-
-var repositoryPath = "dev/.zzz/todo"
-var todosFile = "todos.txt"
+var (
+	repositoryPath = "dev/.zzz/todo"
+	todosFile      = "todos.txt"
+)
 
 type CLI struct {
 	Ls  LsCmd  `cmd:"" help:"List all todo items."`
@@ -184,7 +164,7 @@ func list(out io.Writer, file *os.File) error {
 func openFile(filename string) (*os.File, error) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		fmt.Printf("%s%s does not exist.%s\n", Red, todosFile, Reset)
-		fmt.Printf("%screating %s...%s\n", BrightYellow, todosFile, Reset)
+		fmt.Printf("%screating %s...%s\n", Re, todosFile, Reset)
 	}
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {

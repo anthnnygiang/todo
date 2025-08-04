@@ -11,232 +11,122 @@ import (
 	"github.com/alecthomas/kong"
 )
 
-var testDataDir = "testdata"
-var lsEmptyFile = "ls_empty.txt"
-var lsTwoFile = "ls_two.txt"
-var addOneFile = "add_one.txt"
-var rmTwoFile = "rm_two.txt"
-var rmAllFile = "rm_all.txt"
+var (
+	testDataDir = "testdata"
+	lsEmptyFile = "ls_empty.txt"
+	lsTwoFile   = "ls_two.txt"
+	addOneFile  = "add_one.txt"
+	rmTwoFile   = "rm_two.txt"
+	rmAllFile   = "rm_all.txt"
+)
 
-// Copy the test data files to a temporary directory for testing
 func copyDir(src, dst string) error {
 	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		rel, _ := filepath.Rel(src, path)
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
 		target := filepath.Join(dst, rel)
 		if d.IsDir() {
-			return os.MkdirAll(target, 0755)
+			return os.MkdirAll(target, 0700)
 		}
-		in, _ := os.Open(path)
+		in, err := os.Open(path)
+		if err != nil {
+			return err
+		}
 		defer in.Close()
-		out, _ := os.Create(target)
+		out, err := os.Create(target)
+		if err != nil {
+			return err
+		}
 		defer out.Close()
 		_, err = io.Copy(out, in)
 		return err
 	})
 }
 
-func TestLsEmptyCmd(t *testing.T) {
+func TestCLICmds(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		file string
+		want string
+	}{
+		{
+			name: "LsEmpty",
+			args: []string{"ls"},
+			file: lsEmptyFile,
+			want: "\x1b[32mall done!\x1b[0m\n",
+		},
+		{
+			name: "LsTwo",
+			args: []string{"ls"},
+			file: lsTwoFile,
+			want: "\x1b[32m\x1b[1m1.\x1b[0m first todo\n" +
+				"\x1b[32m\x1b[1m2.\x1b[0m second todo\n",
+		},
+		{
+			name: "AddOne",
+			args: []string{"add", "new todo"},
+			file: addOneFile,
+			want: "\x1b[32m\x1b[1m1.\x1b[0m new todo\n",
+		},
+		{
+			name: "RmTwo",
+			args: []string{"rm", "1", "2"},
+			file: rmTwoFile,
+			want: "\x1b[32m\x1b[1m1.\x1b[0m third todo\n" +
+				"\x1b[32m\x1b[1m2.\x1b[0m fourth todo\n",
+		},
+		{
+			name: "RmAll",
+			args: []string{"rm"},
+			file: rmAllFile,
+			want: "\x1b[32mall done!\x1b[0m\n",
+		},
+	}
+
+	// Prepare fresh testdata
 	tmp := t.TempDir()
 	if err := copyDir(testDataDir, tmp); err != nil {
-		t.Fatalf("failed to copy testdata: %v", err)
-	}
-	file, err := openFile(filepath.Join(tmp, lsEmptyFile))
-	out := &bytes.Buffer{}
-	CLISpec := CLI{
-		Ls: LsCmd{
-			Out:  out,
-			File: file,
-		},
-		Add: AddCmd{
-			Out:  out,
-			File: file,
-		},
-		Rm: RmCmd{
-			Out:  out,
-			File: file,
-		},
+		t.Fatalf("copyDir failed: %v", err)
 	}
 
-	// Set up a parser that writes to a buffer instead of os.Stdout.
-	parser := kong.Must(&CLISpec)
-	args := []string{"ls"}
-	ctx, err := parser.Parse(args)
-	if err != nil {
-		t.Fatalf("parse(%v) failed: %s", args, err)
-	}
-	if err := ctx.Run(ctx); err != nil {
-		t.Fatalf("run failed: %s", err)
-	}
-	got := out.String()
-	want := "\x1b[32mall done!\x1b[0m\n"
-	if got != want {
-		t.Errorf("\nexpected: %q\ngot: %q", want, got)
-	}
-}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel() // each test has it's own file
 
-func TestLsTwoCmd(t *testing.T) {
-	tmp := t.TempDir()
-	if err := copyDir(testDataDir, tmp); err != nil {
-		t.Fatalf("failed to copy testdata: %v", err)
-	}
-	file, err := openFile(filepath.Join(tmp, lsTwoFile))
-	if err != nil {
-		t.Fatalf("openFile(%s) failed: %s", lsTwoFile, err)
-	}
-	out := &bytes.Buffer{}
-	CLISpec := CLI{
-		Ls: LsCmd{
-			Out:  out,
-			File: file,
-		},
-		Add: AddCmd{
-			Out:  out,
-			File: file,
-		},
-		Rm: RmCmd{
-			Out:  out,
-			File: file,
-		},
-	}
+			// open the specific todo file
+			fpath := filepath.Join(tmp, tc.file)
+			file, err := openFile(fpath)
+			if err != nil {
+				t.Fatalf("openFile(%q) failed: %v", tc.file, err)
+			}
 
-	parser := kong.Must(&CLISpec)
-	args := []string{"ls"}
-	ctx, err := parser.Parse(args)
-	if err != nil {
-		t.Fatalf("parse(%v) failed: %s", args, err)
-	}
-	if err := ctx.Run(ctx); err != nil {
-		t.Fatalf("run failed: %s", err)
-	}
-	got := out.String()
-	want := "\x1b[32m\x1b[1m1.\x1b[0m first todo\n\x1b[32m\x1b[1m2.\x1b[0m second todo\n"
-	if got != want {
-		t.Errorf("\nexpected: %q\ngot: %q", want, got)
-	}
-}
+			// use buffer instead of os.Stdout for testing
+			out := &bytes.Buffer{}
+			spec := CLI{
+				Ls:  LsCmd{Out: out, File: file},
+				Add: AddCmd{Out: out, File: file},
+				Rm:  RmCmd{Out: out, File: file},
+			}
 
-func TestAddOneCmd(t *testing.T) {
-	tmp := t.TempDir()
-	if err := copyDir(testDataDir, tmp); err != nil {
-		t.Fatalf("failed to copy testdata: %v", err)
-	}
-	file, err := openFile(filepath.Join(tmp, addOneFile))
-	if err != nil {
-		t.Fatalf("openFile(%s) failed: %s", addOneFile, err)
-	}
-	out := &bytes.Buffer{}
-	CLISpec := CLI{
-		Ls: LsCmd{
-			Out:  out,
-			File: file,
-		},
-		Add: AddCmd{
-			Out:  out,
-			File: file,
-		},
-		Rm: RmCmd{
-			Out:  out,
-			File: file,
-		},
-	}
+			parser := kong.Must(&spec)
+			ctx, err := parser.Parse(tc.args)
+			if err != nil {
+				t.Fatalf("Parse(%v) failed: %v", tc.args, err)
+			}
+			if err := ctx.Run(ctx); err != nil {
+				t.Fatalf("Run failed: %v", err)
+			}
 
-	parser := kong.Must(&CLISpec)
-	args := []string{"add", "new todo"}
-	ctx, err := parser.Parse(args)
-	if err != nil {
-		t.Fatalf("parse(%v) failed: %s", args, err)
-	}
-	if err := ctx.Run(ctx); err != nil {
-		t.Fatalf("run failed: %s", err)
-	}
-	got := out.String()
-	want := "\x1b[32m\x1b[1m1.\x1b[0m new todo\n"
-	if got != want {
-		t.Errorf("\nexpected: %q\ngot: %q", want, got)
-	}
-}
-
-func TestRmTwoCmd(t *testing.T) {
-	tmp := t.TempDir()
-	if err := copyDir(testDataDir, tmp); err != nil {
-		t.Fatalf("failed to copy testdata: %v", err)
-	}
-	file, err := openFile(filepath.Join(tmp, rmTwoFile))
-	if err != nil {
-		t.Fatalf("openFile(%s) failed: %s", rmTwoFile, err)
-	}
-	out := &bytes.Buffer{}
-	CLISpec := CLI{
-		Ls: LsCmd{
-			Out:  out,
-			File: file,
-		},
-		Add: AddCmd{
-			Out:  out,
-			File: file,
-		},
-		Rm: RmCmd{
-			Out:  out,
-			File: file,
-		},
-	}
-
-	parser := kong.Must(&CLISpec)
-	args := []string{"rm", "1", "2"}
-	ctx, err := parser.Parse(args)
-	if err != nil {
-		t.Fatalf("parse(%v) failed: %s", args, err)
-	}
-	if err := ctx.Run(ctx); err != nil {
-		t.Fatalf("run failed: %s", err)
-	}
-	got := out.String()
-	want := "\x1b[32m\x1b[1m1.\x1b[0m third todo\n\x1b[32m\x1b[1m2.\x1b[0m fourth todo\n"
-	if got != want {
-		t.Errorf("\nexpected: %q\ngot: %q", want, got)
-	}
-}
-
-func TestRmAllCmd(t *testing.T) {
-	tmp := t.TempDir()
-	if err := copyDir(testDataDir, tmp); err != nil {
-		t.Fatalf("failed to copy testdata: %v", err)
-	}
-	file, err := openFile(filepath.Join(tmp, rmAllFile))
-	if err != nil {
-		t.Fatalf("openFile(%s) failed: %s", rmAllFile, err)
-	}
-	out := &bytes.Buffer{}
-	CLISpec := CLI{
-		Ls: LsCmd{
-			Out:  out,
-			File: file,
-		},
-		Add: AddCmd{
-			Out:  out,
-			File: file,
-		},
-		Rm: RmCmd{
-			Out:  out,
-			File: file,
-		},
-	}
-
-	parser := kong.Must(&CLISpec)
-	args := []string{"rm"}
-	ctx, err := parser.Parse(args)
-	if err != nil {
-		t.Fatalf("parse(%v) failed: %s", args, err)
-	}
-	if err := ctx.Run(ctx); err != nil {
-		t.Fatalf("run failed: %s", err)
-	}
-	got := out.String()
-	want := "\x1b[32mall done!\x1b[0m\n"
-	if got != want {
-		t.Errorf("\nexpected: %q\ngot: %q", want, got)
+			got := out.String()
+			if got != tc.want {
+				t.Errorf("expected output %q, got %q", tc.want, got)
+			}
+		})
 	}
 }
