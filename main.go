@@ -164,7 +164,7 @@ func list(out io.Writer, file *os.File) error {
 func openFile(filename string) (*os.File, error) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		fmt.Printf("%s%s does not exist.%s\n", Red, todosFile, Reset)
-		fmt.Printf("%screating %s...%s\n", Re, todosFile, Reset)
+		fmt.Printf("%screating %s...%s\n", Red, todosFile, Reset)
 	}
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
