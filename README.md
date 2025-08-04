@@ -3,6 +3,8 @@
 Simple todo CLI written in Go.\
 `$ todo -h` for help.
 
+![example](./example.png)
+
 ## Installation
 1. Clone the repository.
 2. `go install main.go`
