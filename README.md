@@ -7,7 +7,6 @@ Simple todo CLI written in Go.\
 1. Clone the repository.
 2. `go install main.go`
 
-
 ## Usage
 1. Add a todo.
 ```
@@ -25,3 +24,6 @@ $ todo ls
 $ todo rm 1
 1. buy bananas
 ```
+
+## Storage
+Todos are stored in a file named `todo.txt` in the home directory.\

@@ -16,10 +16,7 @@ const Bold = "\033[1m"
 const Red = "\033[31m"
 const Green = "\033[32m"
 
-var (
-	repositoryPath = "dev/.zzz/todo"
-	todosFile      = "todos.txt"
-)
+var todosFile = ".todos.txt"
 
 type CLI struct {
 	Ls  LsCmd  `cmd:"" help:"List all todo items."`
@@ -47,7 +44,7 @@ func main() {
 	if err != nil {
 		return
 	}
-	filename := filepath.Join(home, repositoryPath, todosFile)
+	filename := filepath.Join(home, todosFile)
 	file, err := openFile(filename)
 	if err != nil {
 		return
@@ -163,8 +160,8 @@ func list(out io.Writer, file *os.File) error {
 
 func openFile(filename string) (*os.File, error) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		fmt.Printf("%s%s does not exist.%s\n", Red, todosFile, Reset)
-		fmt.Printf("%screating %s...%s\n", Red, todosFile, Reset)
+		fmt.Printf("%s'%s' does not exist.%s\n", Red, todosFile, Reset)
+		fmt.Printf("%screating '%s' in home directory...%s\n", Red, todosFile, Reset)
 	}
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
