@@ -61,7 +61,7 @@ func TestCLICmds(t *testing.T) {
 		},
 	}
 
-	// Prepare fresh testdata
+	// prepare fresh testdata
 	tmp := t.TempDir()
 	if err := copyDir(testDataDir, tmp); err != nil {
 		t.Fatalf("copyDir(%q, tmp) failed: %v", testDataDir, err)
