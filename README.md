@@ -28,4 +28,4 @@ $ todo rm 1
 ```
 
 ## Storage
-Todos are stored in a file named `todo.txt` in the home directory.\
+Todos are stored in a file named `.todos.txt` in the home directory.
