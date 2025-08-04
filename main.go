@@ -39,7 +39,7 @@ type RmCmd struct {
 }
 
 func main() {
-	// open Todo file
+	// open todo file once
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return
@@ -96,7 +96,7 @@ func (c *RmCmd) Run() error {
 		return nil
 	}
 
-	// create a map of numbers
+	// create a map of numbers to remove
 	numbersMap := make(map[int]bool)
 	for _, n := range c.Number {
 		num, err := strconv.Atoi(n)
@@ -106,7 +106,7 @@ func (c *RmCmd) Run() error {
 		numbersMap[num] = true
 	}
 
-	// read the file and keep todos that are not in numbersMap
+	// read the todos file
 	var remainingTodos []string
 	fileScanner := bufio.NewScanner(c.File)
 	fileScanner.Split(bufio.ScanLines)
@@ -114,6 +114,7 @@ func (c *RmCmd) Run() error {
 		if numbersMap[i] {
 			continue
 		}
+		// only append todos that we want to keep
 		remainingTodos = append(remainingTodos, fileScanner.Text())
 	}
 
@@ -136,9 +137,9 @@ func (c *RmCmd) Run() error {
 	return nil
 }
 
-// list prints all items in the file.
+// list prints all items in the file
 func list(out io.Writer, file *os.File) error {
-	// Reset the file pointer to the beginning.
+	// reset the file pointer to the beginning
 	_, err := file.Seek(0, io.SeekStart)
 	if err != nil {
 		return err
