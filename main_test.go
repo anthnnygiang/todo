@@ -73,7 +73,7 @@ func TestCLICmds(t *testing.T) {
 
 			// open the specific todo file
 			fpath := filepath.Join(tmp, tc.file)
-			file, err := openFile(fpath)
+			file, err := os.OpenFile(fpath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 			if err != nil {
 				t.Fatalf("openFile(%q) failed: %v", tc.file, err)
 			}

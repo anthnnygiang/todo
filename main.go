@@ -39,17 +39,27 @@ type RmCmd struct {
 }
 
 func main() {
-	// open todo file once
+	// open file
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return
 	}
-	filename := filepath.Join(home, todosFile)
-	file, err := openFile(filename)
-	if err != nil {
-		return
+	fpath := filepath.Join(home, todosFile)
+	if _, err := os.Stat(fpath); os.IsNotExist(err) {
+		fmt.Printf("%s'%s' does not exist.%s\n", Red, todosFile, Reset)
+		fmt.Printf("%screating '%s' in home directory...%s\n", Red, todosFile, Reset)
 	}
-	defer closeFile(file)
+	file, err := os.OpenFile(fpath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		os.Exit(1)
+	}
+	// close file
+	defer func(file *os.File) {
+		if err := file.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}(file)
 	// errors are handled automatically
 	CLISpec := CLI{
 		Ls: LsCmd{
@@ -153,26 +163,6 @@ func list(out io.Writer, file *os.File) error {
 	}
 	for i, line := range todoLines {
 		fmt.Fprintf(out, "%s%s%d.%s %s\n", Green, Bold, i+1, Reset, line)
-	}
-	return nil
-}
-
-func openFile(filename string) (*os.File, error) {
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		fmt.Printf("%s'%s' does not exist.%s\n", Red, todosFile, Reset)
-		fmt.Printf("%screating '%s' in home directory...%s\n", Red, todosFile, Reset)
-	}
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
-}
-
-func closeFile(file *os.File) error {
-	err := file.Close()
-	if err != nil {
-		return err
 	}
 	return nil
 }
