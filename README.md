@@ -23,7 +23,7 @@ $ todo ls
 ```
 3. Mark a todo as done.
 ```
-$ todo rm 1
+$ todo done 1
 1. buy bananas
 ```
 
