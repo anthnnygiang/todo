@@ -29,3 +29,9 @@ $ todo rm 1
 
 ## Storage
 Todos are stored in a file named `.todos.txt` in the home directory.
+
+## Tests
+Run tests with `go test`.
+Code coverage with `go test -coverprofile=coverage.out`.
+Then `go tool cover -func=coverage.out`.
+Then visualize with `go tool cover -html=coverage.out -o coverage.html` and open `coverage.html` in browser.
