@@ -1,5 +1,5 @@
 module local/todo
 
-go 1.22.0
+go 1.26.2
 
-require github.com/alecthomas/kong v1.12.1
+require github.com/alecthomas/kong v1.15.0
