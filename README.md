@@ -7,7 +7,9 @@ Simple todo CLI written in Go.\
 
 ## Installation
 1. Clone the repository.
-2. `go install main.go`
+2. Install with `just install`.
+
+Run `just` to see the available project commands.
 
 ## Usage
 1. Add a todo.
@@ -31,7 +33,10 @@ $ todo done 1
 Todos are stored in a file named `.todos.txt` in the home directory.
 
 ## Tests
-Run tests with `go test`.
-Code coverage with `go test -coverprofile=coverage.out`.
-Then `go tool cover -func=coverage.out`.
-Then visualize with `go tool cover -html=coverage.out -o coverage.html` and open `coverage.html` in browser.
+Run tests with `just test`.
+Code coverage with `just coverage`.
+Then visualize with `just visualise` and open `coverage.html` in browser.
+
+## Development
+Build the CLI with `just build`.
+Remove the local build artifact with `just clean`.
