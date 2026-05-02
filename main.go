@@ -50,7 +50,8 @@ func main() {
 	// Resolve the todo file path in the user's home directory.
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	fpath := filepath.Join(home, todosFile)
 
@@ -100,19 +101,15 @@ func main() {
 
 // Run LsCmd prints all todo items currently stored in the file.
 func (c *LsCmd) Run() error {
-	list(c.Out, c.File)
-	return nil
+	return list(c.Out, c.File)
 }
 
 // Run AddCmd appends the new todo item to the file and prints the updated list.
 func (c *AddCmd) Run() error {
-	input := c.Title
-	bytes := make([]byte, 0)
-	if _, err := c.File.Write(fmt.Appendf(bytes, "%s\n", input)); err != nil {
+	if _, err := c.File.WriteString(c.Title + "\n"); err != nil {
 		return err
 	}
-	list(c.Out, c.File)
-	return nil
+	return list(c.Out, c.File)
 }
 
 // Run DoneCmd removes selected todo items or clears the file if no numbers are provided.
@@ -122,8 +119,7 @@ func (c *DoneCmd) Run() error {
 		if err := clear(c.File); err != nil {
 			return err
 		}
-		list(c.Out, c.File)
-		return nil
+		return list(c.Out, c.File)
 	}
 
 	// create a lookup table of item numbers to remove
@@ -146,6 +142,9 @@ func (c *DoneCmd) Run() error {
 		}
 		remainingTodos = append(remainingTodos, fileScanner.Text())
 	}
+	if err := fileScanner.Err(); err != nil {
+		return err
+	}
 
 	// clear the file and write the remaining todos back to it
 	if err := clear(c.File); err != nil {
@@ -159,8 +158,7 @@ func (c *DoneCmd) Run() error {
 		}
 	}
 
-	list(c.Out, c.File)
-	return nil
+	return list(c.Out, c.File)
 }
 
 // list prints all items in the file
@@ -177,6 +175,9 @@ func list(out io.Writer, file *os.File) error {
 	var todoLines []string
 	for fileScanner.Scan() {
 		todoLines = append(todoLines, fileScanner.Text())
+	}
+	if err := fileScanner.Err(); err != nil {
+		return err
 	}
 
 	if len(todoLines) == 0 {
