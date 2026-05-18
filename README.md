@@ -28,9 +28,15 @@ $ todo ls
 $ todo rm 1
 1. buy bananas
 ```
+4. Use a project-specific todo list.
+```
+$ todo add -p work "submit report"
+$ todo ls --project work
+1. submit report
+```
 
 ## Storage
-Todos are stored in a file named `.todos.txt` in the home directory.
+Todos are stored in the `.todo` directory in the home directory. The default list uses `.default.txt`; project lists use `.<project>.txt`.
 
 ## Tests
 Run tests with `just test`.

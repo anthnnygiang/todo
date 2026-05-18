@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 
 	"github.com/alecthomas/kong"
@@ -16,11 +17,12 @@ const Bold = "\033[1m"
 const Red = "\033[31m"
 const Green = "\033[32m"
 
-// todosFile in home directory
-var todosFile = ".todos.txt"
+const todoDirectory = ".todo"
 
 // define top level CLI commands
 type CLI struct {
+	Project string `short:"p" default:"default" help:"Project todo list to use."`
+
 	Ls  LsCmd  `cmd:"" help:"List all todo items."`
 	Add AddCmd `cmd:"" help:"Add a todo item."`
 	Rm  RmCmd  `cmd:"" help:"Remove one or more todo items. If no numbers are provided, remove all todo items."`
@@ -47,18 +49,49 @@ type RmCmd struct {
 }
 
 func main() {
+	// build the CLI commands with shared dependencies
+	CLISpec := CLI{
+		Ls: LsCmd{
+			Out: os.Stdout,
+		},
+		Add: AddCmd{
+			Out: os.Stdout,
+		},
+		Rm: RmCmd{
+			Out: os.Stdout,
+		},
+	}
+
+	// Parse command-line input before opening the todo file so flags can select it.
+	cmd := kong.Parse(&CLISpec)
+
 	// Resolve the todo file path in the user's home directory.
 	home, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	fpath := filepath.Join(home, todosFile)
+	todoDir := filepath.Join(home, todoDirectory)
+
+	project := CLISpec.Project
+	if project != "default" {
+		invalidNames := []string{"", ".", ".."}
+		if slices.Contains(invalidNames, project) {
+			fmt.Fprintf(os.Stderr, "invalid project name: %s\n", project)
+			os.Exit(1)
+		}
+	}
+	todoFile := project + ".txt"
+	fpath := filepath.Join(todoDir, todoFile)
+
+	if err := os.MkdirAll(todoDir, 0700); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	// create the file if it does not already exist
 	if _, err := os.Stat(fpath); os.IsNotExist(err) {
-		fmt.Printf("%s'%s' does not exist.%s\n", Red, todosFile, Reset)
-		fmt.Printf("%screating '%s' in home directory...%s\n", Red, todosFile, Reset)
+		fmt.Printf("creating '%s' in '%s' directory.\n", todoFile, todoDirectory)
 	}
 
 	// open the todo file for reading and writing
@@ -75,24 +108,11 @@ func main() {
 		}
 	}(file)
 
-	// build the CLI commands with shared dependencies
-	CLISpec := CLI{
-		Ls: LsCmd{
-			Out:  os.Stdout,
-			File: file,
-		},
-		Add: AddCmd{
-			Out:  os.Stdout,
-			File: file,
-		},
-		Rm: RmCmd{
-			Out:  os.Stdout,
-			File: file,
-		},
-	}
+	// set the project file for each command
+	CLISpec.Ls.File = file
+	CLISpec.Add.File = file
+	CLISpec.Rm.File = file
 
-	// Parse command-line input and Run the selected command
-	cmd := kong.Parse(&CLISpec)
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

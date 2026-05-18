@@ -3,23 +3,26 @@ coverage := "coverage.out"
 coverage_html := "coverage.html"
 
 default:
-    just --list
+    @just --list
 
 test:
     go test ./...
 
+format:
+    go fmt ./...
+
 coverage:
-    go test -coverprofile={{coverage}} ./...
-    go tool cover -func={{coverage}}
+    go test -coverprofile={{ coverage }} ./...
+    go tool cover -func={{ coverage }}
 
 visualise: coverage
-    go tool cover -html={{coverage}} -o {{coverage_html}}
+    go tool cover -html={{ coverage }} -o {{ coverage_html }}
 
 build:
-    go build -o {{bin}} .
+    go build -o {{ bin }} .
 
 install:
     go install .
 
 clean:
-    rm -f {{bin}}
+    rm -f {{ bin }}
