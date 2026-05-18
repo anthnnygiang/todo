@@ -23,9 +23,9 @@ $ todo ls
 1. buy strawberries
 2. buy bananas
 ```
-3. Mark a todo as done.
+3. Remove a todo.
 ```
-$ todo done 1
+$ todo rm 1
 1. buy bananas
 ```
 

@@ -52,7 +52,7 @@ func TestCLICmds(t *testing.T) {
 		},
 		{
 			name: "RmTwo",
-			args: []string{"done", "1", "2"},
+			args: []string{"rm", "1", "2"},
 			file: rmTwoFile,
 			output: "\x1b[32m\x1b[1m1.\x1b[0m third todo\n" +
 				"\x1b[32m\x1b[1m2.\x1b[0m fourth todo\n",
@@ -60,7 +60,7 @@ func TestCLICmds(t *testing.T) {
 		},
 		{
 			name:   "RmAll",
-			args:   []string{"done"},
+			args:   []string{"rm"},
 			file:   rmAllFile,
 			output: "\x1b[32mall done!\x1b[0m\n",
 			want:   "",
@@ -92,9 +92,9 @@ func TestCLICmds(t *testing.T) {
 			// use buffer instead of os.Stdout for testing
 			out := &bytes.Buffer{}
 			spec := CLI{
-				Ls:   LsCmd{Out: out, File: file},
-				Add:  AddCmd{Out: out, File: file},
-				Done: DoneCmd{Out: out, File: file},
+				Ls:  LsCmd{Out: out, File: file},
+				Add: AddCmd{Out: out, File: file},
+				Rm:  RmCmd{Out: out, File: file},
 			}
 
 			parser := kong.Must(&spec)

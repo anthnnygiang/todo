@@ -21,9 +21,9 @@ var todosFile = ".todos.txt"
 
 // define top level CLI commands
 type CLI struct {
-	Ls   LsCmd   `cmd:"" help:"List all todo items."`
-	Add  AddCmd  `cmd:"" help:"Add a todo item."`
-	Done DoneCmd `cmd:"" help:"Complete one or more todo items. If no numbers are provided, complete all todo items."`
+	Ls  LsCmd  `cmd:"" help:"List all todo items."`
+	Add AddCmd `cmd:"" help:"Add a todo item."`
+	Rm  RmCmd  `cmd:"" help:"Remove one or more todo items. If no numbers are provided, remove all todo items."`
 }
 
 // LsCmd lists all current todo items
@@ -39,9 +39,9 @@ type AddCmd struct {
 	File  *os.File  `kong:"-"`
 }
 
-// DoneCmd removes one or more todo items, or clears the list if no numbers are provided
-type DoneCmd struct {
-	Number []string  `help:"Todo items to complete." arg:"" optional:""`
+// RmCmd removes one or more todo items, or clears the list if no numbers are provided
+type RmCmd struct {
+	Number []string  `help:"Todo items to remove." arg:"" optional:""`
 	Out    io.Writer `kong:"-"`
 	File   *os.File  `kong:"-"`
 }
@@ -85,7 +85,7 @@ func main() {
 			Out:  os.Stdout,
 			File: file,
 		},
-		Done: DoneCmd{
+		Rm: RmCmd{
 			Out:  os.Stdout,
 			File: file,
 		},
@@ -112,9 +112,9 @@ func (c *AddCmd) Run() error {
 	return list(c.Out, c.File)
 }
 
-// Run DoneCmd removes selected todo items or clears the file if no numbers are provided.
-func (c *DoneCmd) Run() error {
-	// if no numbers are provided, complete all todo items
+// Run RmCmd removes selected todo items or clears the file if no numbers are provided.
+func (c *RmCmd) Run() error {
+	// if no numbers are provided, remove all todo items
 	if len(c.Number) == 0 {
 		if err := clear(c.File); err != nil {
 			return err
