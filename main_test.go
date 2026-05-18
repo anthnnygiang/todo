@@ -29,41 +29,46 @@ func TestCLICmds(t *testing.T) {
 		want   string // persisted file content
 	}{
 		{
-			name:   "LsEmpty",
-			args:   []string{"ls"},
-			file:   lsEmptyFile,
-			output: "\x1b[32mall done!\x1b[0m\n",
-			want:   "",
+			name: "LsEmpty",
+			args: []string{"ls"},
+			file: lsEmptyFile,
+			output: "\x1b[32m\x1b[1mls_empty:\x1b[0m\n" +
+				"\x1b[32mall done!\x1b[0m\n",
+			want: "",
 		},
 		{
 			name: "LsTwo",
 			args: []string{"ls"},
 			file: lsTwoFile,
-			output: "\x1b[32m\x1b[1m1.\x1b[0m first todo\n" +
+			output: "\x1b[32m\x1b[1mls_two:\x1b[0m\n" +
+				"\x1b[32m\x1b[1m1.\x1b[0m first todo\n" +
 				"\x1b[32m\x1b[1m2.\x1b[0m second todo\n",
 			want: "first todo\nsecond todo\n",
 		},
 		{
-			name:   "AddOne",
-			args:   []string{"add", "new todo"},
-			file:   addOneFile,
-			output: "\x1b[32m\x1b[1m1.\x1b[0m new todo\n",
-			want:   "new todo\n",
+			name: "AddOne",
+			args: []string{"add", "new todo"},
+			file: addOneFile,
+			output: "\x1b[32m\x1b[1madd_one:\x1b[0m\n" +
+				"\x1b[32m\x1b[1m1.\x1b[0m new todo\n",
+			want: "new todo\n",
 		},
 		{
 			name: "RmTwo",
 			args: []string{"rm", "1", "2"},
 			file: rmTwoFile,
-			output: "\x1b[32m\x1b[1m1.\x1b[0m third todo\n" +
+			output: "\x1b[32m\x1b[1mrm_two:\x1b[0m\n" +
+				"\x1b[32m\x1b[1m1.\x1b[0m third todo\n" +
 				"\x1b[32m\x1b[1m2.\x1b[0m fourth todo\n",
 			want: "third todo\nfourth todo\n",
 		},
 		{
-			name:   "RmAll",
-			args:   []string{"rm"},
-			file:   rmAllFile,
-			output: "\x1b[32mall done!\x1b[0m\n",
-			want:   "",
+			name: "RmAll",
+			args: []string{"rm"},
+			file: rmAllFile,
+			output: "\x1b[32m\x1b[1mrm_all:\x1b[0m\n" +
+				"\x1b[32mall done!\x1b[0m\n",
+			want: "",
 		},
 	}
 
