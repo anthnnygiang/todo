@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/alecthomas/kong"
 )
@@ -21,7 +22,7 @@ const todoDirectory = ".todo"
 
 // define top level CLI commands
 type CLI struct {
-	Project string `short:"p" default:"default" help:"Project todo list to use."`
+	Project string `short:"p" default:"todo" help:"Project todo list to use."`
 
 	Ls  LsCmd  `cmd:"" help:"List all todo items."`
 	Add AddCmd `cmd:"" help:"Add a todo item."`
@@ -74,7 +75,7 @@ func main() {
 	todoDir := filepath.Join(home, todoDirectory)
 
 	project := CLISpec.Project
-	if project != "default" {
+	if project != "todo" {
 		invalidNames := []string{"", ".", ".."}
 		if slices.Contains(invalidNames, project) {
 			fmt.Fprintf(os.Stderr, "invalid project name: %s\n", project)
@@ -183,6 +184,8 @@ func (c *RmCmd) Run() error {
 
 // list prints all items in the file
 func list(out io.Writer, file *os.File) error {
+	var filename = file.Name()
+	fmt.Fprintf(out, "%s%s%s:%s\n", Green, Bold, strings.TrimSuffix(filepath.Base(filename), filepath.Ext(filename)), Reset)
 	// reset the file pointer to the beginning before reading
 	_, err := file.Seek(0, io.SeekStart)
 	if err != nil {
