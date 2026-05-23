@@ -12,12 +12,13 @@ import (
 )
 
 var (
-	testDataDir = "testdata"
-	lsEmptyFile = "ls_empty.txt"
-	lsTwoFile   = "ls_two.txt"
-	addOneFile  = "add_one.txt"
-	rmTwoFile   = "rm_two.txt"
-	rmAllFile   = "rm_all.txt"
+	testDataDir   = "testdata"
+	lsEmptyFile   = "ls_empty.txt"
+	lsTwoFile     = "ls_two.txt"
+	lsProjTwoFile = "ls_proj_two.txt"
+	addOneFile    = "add_one.txt"
+	rmTwoFile     = "rm_two.txt"
+	rmAllFile     = "rm_all.txt"
 )
 
 func TestCLICmds(t *testing.T) {
@@ -41,6 +42,15 @@ func TestCLICmds(t *testing.T) {
 			args: []string{"ls"},
 			file: lsTwoFile,
 			output: "\x1b[32m\x1b[1mls_two:\x1b[0m\n" +
+				"\x1b[32m\x1b[1m1.\x1b[0m first todo\n" +
+				"\x1b[32m\x1b[1m2.\x1b[0m second todo\n",
+			want: "first todo\nsecond todo\n",
+		},
+		{
+			name: "LsProject",
+			args: []string{"--project", "work", "ls"},
+			file: lsProjTwoFile,
+			output: "\x1b[32m\x1b[1mls_proj_two:\x1b[0m\n" +
 				"\x1b[32m\x1b[1m1.\x1b[0m first todo\n" +
 				"\x1b[32m\x1b[1m2.\x1b[0m second todo\n",
 			want: "first todo\nsecond todo\n",
