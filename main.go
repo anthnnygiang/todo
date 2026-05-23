@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"slices"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -20,13 +20,17 @@ const Green = "\033[32m"
 
 const todoDirectory = ".todo"
 
+var validNames = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+
 // define top level CLI commands
 type CLI struct {
-	Project string `short:"p" default:"todo" help:"Project todo list to use."`
+	Project string `short:"p" aliases:"proj" default:"todo" help:"Project todo list to use."`
 
 	Ls  LsCmd  `cmd:"" help:"List all todo items."`
 	Add AddCmd `cmd:"" help:"Add a todo item."`
 	Rm  RmCmd  `cmd:"" help:"Remove one or more todo items. If no numbers are provided, remove all todo items."`
+
+	Projects ProjectsCmd `cmd:"" aliases:"p,proj" help:"List all todo projects."`
 }
 
 // LsCmd lists all current todo items
@@ -49,6 +53,12 @@ type RmCmd struct {
 	File   *os.File  `kong:"-"`
 }
 
+// ProjectsCmd lists the available project files in the todo directory.
+type ProjectsCmd struct {
+	Out io.Writer `kong:"-"`
+	Dir string    `kong:"-"`
+}
+
 func main() {
 	// build the CLI commands with shared dependencies
 	CLISpec := CLI{
@@ -59,6 +69,9 @@ func main() {
 			Out: os.Stdout,
 		},
 		Rm: RmCmd{
+			Out: os.Stdout,
+		},
+		Projects: ProjectsCmd{
 			Out: os.Stdout,
 		},
 	}
@@ -75,20 +88,17 @@ func main() {
 	todoDir := filepath.Join(home, todoDirectory)
 
 	project := CLISpec.Project
-	if project != "todo" {
-		invalidNames := []string{"", ".", ".."}
-		if slices.Contains(invalidNames, project) {
-			fmt.Fprintf(os.Stderr, "invalid project name: %s\n", project)
-			os.Exit(1)
-		}
+	if project != "todo" && !validNames.MatchString(project) {
+		fmt.Fprintf(os.Stderr, "invalid project name: %s\n", project)
+		os.Exit(1)
 	}
 	todoFile := project + ".txt"
 	fpath := filepath.Join(todoDir, todoFile)
-
 	if err := os.MkdirAll(todoDir, 0700); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	CLISpec.Projects.Dir = todoDir
 
 	// create the file if it does not already exist
 	if _, err := os.Stat(fpath); os.IsNotExist(err) {
@@ -180,6 +190,27 @@ func (c *RmCmd) Run() error {
 	}
 
 	return list(c.Out, c.File)
+}
+
+// Run ProjectsCmd prints all available todo project names.
+func (c *ProjectsCmd) Run() error {
+	entries, err := os.ReadDir(c.Dir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() {
+			continue
+		}
+		name := entry.Name()
+		fmt.Fprintln(c.Out, strings.TrimSuffix(name, filepath.Ext(name)))
+	}
+	return nil
 }
 
 // list prints all items in the file

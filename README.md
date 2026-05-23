@@ -34,9 +34,15 @@ $ todo add -p work "submit report"
 $ todo ls --project work
 1. submit report
 ```
+5. List projects.
+```
+$ todo projects
+todo
+work
+```
 
 ## Storage
-Todos are stored in the `.todo` directory in the home directory. The default list uses `.default.txt`; project lists use `.<project>.txt`.
+Todos are stored in the `.todo` directory in the home directory. The default list uses `todo.txt`; project lists use `<project>.txt`.
 
 ## Tests
 Run tests with `just test`.
